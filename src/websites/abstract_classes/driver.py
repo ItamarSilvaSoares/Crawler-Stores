@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Iterable, Optional
 
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.remote.webelement import WebElement
@@ -19,7 +20,7 @@ class Driver(ABC):
             " Safari/537.36 Edg/111.0.1661.44"
         )
     }
-    TIMEOUT = 20
+    TIMEOUT = 5
 
     def init_driver(self) -> None:
         service = Service(
@@ -55,15 +56,21 @@ class Driver(ABC):
 
     def get_element_by_something(self, by, value: str) -> WebElement:
         """Get one element in page"""
-        return WebDriverWait(self.__driver, timeout=self.TIMEOUT).until(
-            lambda d: d.find_element(by, value)
-        )
+        try:
+            return WebDriverWait(self.__driver, timeout=self.TIMEOUT).until(
+                lambda d: d.find_element(by, value)
+            )
+        except TimeoutException:
+            return None
 
     def get_elements_by_something(self, by, value: str) -> Iterable[WebElement]:
         """Get several element in page"""
-        return WebDriverWait(self.__driver, timeout=self.TIMEOUT).until(
-            lambda d: d.find_elements(by, value)
-        )
+        try:
+            return WebDriverWait(self.__driver, timeout=self.TIMEOUT).until(
+                lambda d: d.find_elements(by, value)
+            )
+        except TimeoutException:
+            return None
 
     @abstractmethod
     def _get_product_img(self, card: WebElement) -> Optional[str]:
@@ -76,12 +83,12 @@ class Driver(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _get_product_price(self, product_html: str) -> Optional[float]:
+    def _get_product_price(self, card: WebElement) -> Optional[float]:
         """Get the product's price"""
         raise NotImplementedError
 
     @abstractmethod
-    def _get_product_url(self, product_html: str) -> Optional[str]:
+    def _get_product_url(self, card: WebElement) -> Optional[str]:
         """Get the url to the product's page in the website"""
         raise NotImplementedError
 
