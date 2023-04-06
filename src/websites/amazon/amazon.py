@@ -1,10 +1,9 @@
 from time import sleep
-from typing import Optional, Iterable, Dict
+from typing import Dict, Optional
 
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.common.exceptions import NoSuchElementException
-
 
 from src.websites.abstract_classes.driver import Driver
 from src.websites.amazon.utils.classes_names_amazon import classes_name
@@ -27,10 +26,14 @@ class Amazon(Driver):
         self.cards = []
 
     def get_url_to_search(self, product_name: str = "") -> str:
-        return self.URL_BASE + self.URL_SEARCH + product_name.replace(" ", "+").lower()
+        url = self.URL_BASE + self.URL_SEARCH
+        return url + product_name.replace(" ", "+").lower()
 
-    def get_classes_name(self, class_: str):
-        return classes_name[class_].replace(" ", ".")
+    def get_classes_name(self, class_title: str):
+        print(class_title)
+        print(classes_name[class_title])
+
+        return classes_name[class_title].replace(" ", ".")
 
     def _get_products_cards(self) -> None:
         self.cards.extend(
@@ -83,19 +86,39 @@ class Amazon(Driver):
         next_button = self.get_element_by_something(
             By.CLASS_NAME, self.get_classes_name(self.NEXT_PAGE)
         )
-        return next_button.get_attribute("href") if next_button else next_button
+        if next_button:
+            return next_button.get_attribute("href")
+        return None
 
-    def get_products(self, product_name: str, sampling: int = 60):
+    def get_products(self, product_name: str, sampling: int = 25):
         url = self.get_url_to_search(product_name)
+        products = []
         while len(self.cards) < sampling and url:
             self.go_to(url)
             self._get_products_cards()
             url = self._get_next_page()
 
-        return self.cards
+        for i in self.cards:
+            try:
+                print(i)
+                a = self.get_classes_name(i)
+                print(a)
+            except WebElement:
+                continue
+
+        # generator = self.factory_products(self.cards, product_name)
+
+        # for i in range(len(self.cards)):
+        #     try:
+        #         products.append(next(generator))
+        #     except StopIteration:
+        #         break
+        # print(products)
+        # return products
 
 
 if __name__ == "__main__":
     a = Amazon()
     a.get_products("mouse rgb")
+
     sleep(30)

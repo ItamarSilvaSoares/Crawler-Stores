@@ -10,6 +10,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.core.utils import ChromeType
 
+from src.product import Product
+
 
 class Driver(ABC):
     USER_AGENT = {
@@ -71,6 +73,18 @@ class Driver(ABC):
             )
         except TimeoutException:
             return None
+
+    def factory_products(
+        self, cards: Iterable[WebElement], search_term
+    ) -> Iterable[Product]:
+        return (
+            Product(search_term, name, price, url, image)
+            for card in cards
+            if (name := self._get_product_name(card, search_term)) is not None
+            and (price := self._get_product_price(card)) is not None
+            and (url := self._get_product_url(card)) is not None
+            and (image := self._get_product_img(card)) is not None
+        )
 
     @abstractmethod
     def _get_product_img(self, card: WebElement) -> Optional[str]:
